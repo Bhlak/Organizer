@@ -7,6 +7,9 @@ mapping = {
         "pptx": "Docs",
         "pptm": "Docs",
 
+        "cbz": "Comics",
+        "cbr": "Comics",
+
         "png": "Images",
         "jpg": "Images",
         "JPG": "Images",
@@ -87,4 +90,4 @@ def sorter(path, file, type):
 
 
 if __name__ == '__main__':
-    organizer("/home/bhlak/Downloads")
+    organizer("C:\\Users\\Bhlak\\Downloads")
