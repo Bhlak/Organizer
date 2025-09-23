@@ -21,7 +21,13 @@ class MainWindow(QMainWindow):
         # Home
         home_tab = QWidget()
         home_layout = QVBoxLayout()
-        home_layout.addWidget(QLabel("Welcome to The Folder Organizer!"))
+        welcome_label = QLabel("Welcome to The Folder Organizer!")
+        welcome_label.setAlignment(Qt.AlignCenter)
+        welcome_label.setStyleSheet("font-size: 18px; font-weight: bold; margin: 5px; border: 2px dotted; border-radius: 30%")
+        home_layout.addWidget(welcome_label)
+
+        self.current_schedule_label = QLabel("No schedule set")
+        home_layout.addWidget(self.current_schedule_label)
         home_tab.setLayout(home_layout)
         self.tabs.addTab(home_tab, "Home")
 
@@ -144,6 +150,7 @@ class MainWindow(QMainWindow):
         self.save_button.clicked.connect(self.save_folders)
 
         self.load_folders()
+        self.render_schedule()
     
     def eventFilter(self, source, event):
         if source is self.folder_list and event.type() == QEvent.KeyPress:
@@ -156,31 +163,6 @@ class MainWindow(QMainWindow):
             folder = QFileDialog.getExistingDirectory(self, "Select Folder")
             if folder and not any(self.folder_list.item(i).text() == folder for i in range(self.folder_list.count())):
                  self.folder_list.addItem(folder)
-    
-    def save_schedule(self):
-        import json
-        
-        schedule_data = {}
-
-        if self.daily_radio.isChecked():
-            schedule_data["type"] = "daily"
-            schedule_data["every"] = self.daily_spin.value()
-            schedule_data["time"] = self.daily_time.time().toString("HH:mm")
-        elif self.weekly_radio.isChecked():
-            schedule_data["type"] = "weekly"
-            schedule_data["every"] = self.weekly_spin.value()
-            schedule_data["weekday"] = self.weekday_combo.currentText()
-            schedule_data["time"] = self.weekly_time.time().toString("HH:mm")
-        elif self.monthly_radio.isChecked():
-            schedule_data["type"] = "monthly"
-            schedule_data["day"] = self.monthly_spin.value()
-            schedule_data["time"] = self.monthly_time.time().toString("HH:mm")
-        
-        with open("schedule.json", "w") as f:
-            json.dump(schedule_data, f, indent=4)
-        
-        self.status.showMessage("Schedule Saved!", 3000)
-
 
     def remove_folders(self):
         folders = self.folder_list.selectedItems()
@@ -231,8 +213,59 @@ class MainWindow(QMainWindow):
             with open("folders.txt", "r") as f:
                 folders = f.read().splitlines()
                 self.folder_list.addItems(folders)
+    
+    def save_schedule(self):
+        import json
         
+        schedule_data = {}
 
+        if self.daily_radio.isChecked():
+            schedule_data["type"] = "daily"
+            schedule_data["every"] = self.daily_spin.value()
+            schedule_data["time"] = self.daily_time.time().toString("HH:mm")
+        elif self.weekly_radio.isChecked():
+            schedule_data["type"] = "weekly"
+            schedule_data["every"] = self.weekly_spin.value()
+            schedule_data["weekday"] = self.weekday_combo.currentText()
+            schedule_data["time"] = self.weekly_time.time().toString("HH:mm")
+        elif self.monthly_radio.isChecked():
+            schedule_data["type"] = "monthly"
+            schedule_data["day"] = self.monthly_spin.value()
+            schedule_data["time"] = self.monthly_time.time().toString("HH:mm")
+        
+        with open("schedule.json", "w") as f:
+            json.dump(schedule_data, f, indent=4)
+        
+        self.status.showMessage("Schedule Saved!", 3000)
+        self.render_schedule()
+
+    def load_schedule(self):
+        import os
+        import json
+
+        if os.path.exists("schedule.json"):
+            with open("schedule.json", "r") as f:
+                schedule_data = json.load(f)
+                return schedule_data
+    
+    def render_schedule(self):
+        schedule_data = self.load_schedule()
+        schedule_type = schedule_data.get("type")
+
+        if schedule_type=="daily":
+            text = f"Schedule: Daily at {schedule_data.get('time','-')}"
+        elif schedule_type=="weekly":
+            text = (f"Schedule: Weekly, every {schedule_data.get('every','1')} week(s) "
+                        f"on {schedule_data.get('weekday','-')} at {schedule_data.get('time','-')}")
+        elif schedule_type=="monthly":
+             text = (f"Schedule: Monthly on day {schedule_data.get('day','-')} "
+                        f"at {schedule_data.get('time','-')}")
+        else:
+            text = "No valid schedule set"
+        
+        self.current_schedule_label.setText(text)
+
+            
 app = QApplication(sys.argv)
 window = MainWindow()
 window.show()
