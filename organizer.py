@@ -28,6 +28,7 @@ mapping = {
         "zip": "Compressed",
         
         "mp4": "Videos",
+        "mkv": "Videos",
         "webp": "Videos",
         
         "sh": "Bash",
@@ -40,11 +41,12 @@ mapping = {
     }
 
 def organizer(path):
+    print("here")
     from os import listdir
     from os.path import isfile, join
     
     files = [f for f in listdir(path) if isfile(join(path, f))]
-    
+    print("Here at organizer")
     for i in files:
         filetype = i.split('.')[-1]
 
@@ -69,6 +71,7 @@ def sorter(path, file, type):
     import os
     import shutil
 
+    print("Here at sorter")
     dest = get_folder(type)
     
     if dest:
@@ -90,4 +93,10 @@ def sorter(path, file, type):
 
 
 if __name__ == '__main__':
-    organizer("C:\\Users\\Bhlak\\Downloads")
+    import sys
+    
+    if len(sys.argv) > 1:
+    # print("1")
+        folder = sys.argv[1]
+        print(folder)
+        organizer(folder)

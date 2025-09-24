@@ -1,0 +1,23 @@
+[2025-09-24 12:10:27] executor.py started
+[2025-09-24 12:10:27] setup_schedule called
+[2025-09-24 12:10:27] Schedule loaded: {'type': 'daily', 'every': 1, 'time': '11:52'}
+[2025-09-24 12:10:27]  Job(interval=1, unit=days, do=run_organizer, args=(), kwargs={})
+[2025-09-24 12:12:27] setup_schedule called
+[2025-09-24 12:12:27] Schedule loaded: {'type': 'daily', 'every': 1, 'time': '12:13'}
+[2025-09-24 12:12:27]  Job(interval=1, unit=days, do=run_organizer, args=(), kwargs={})
+[2025-09-24 12:13:27] run_organizer called
+[2025-09-24 12:13:27] Launching organizer.py for folder: C:/Users/Bhlak/Downloads/Video/Art
+[2025-09-24 12:13:27] Launching organizer.py for folder: C:/Users/Bhlak/Downloads/Video
+[2025-09-24 12:23:27] setup_schedule called
+[2025-09-24 12:23:27] Schedule loaded: {'type': 'daily', 'every': 1, 'time': '12:24'}
+[2025-09-24 12:23:27]  Job(interval=1, unit=days, do=run_organizer, args=(), kwargs={})
+[2025-09-24 12:24:27] run_organizer called
+[2025-09-24 12:24:27] Launching organizer.py for folder: C:/Users/Bhlak/Downloads/Video/Art
+[2025-09-24 12:24:27] Launching organizer.py for folder: C:/Users/Bhlak/Downloads/Video
+[2025-09-24 12:28:27] executor.py started
+[2025-09-24 12:28:27] setup_schedule called
+[2025-09-24 12:28:27] Schedule loaded: {'type': 'daily', 'every': 1, 'time': '12:30'}
+[2025-09-24 12:28:27]  Job(interval=1, unit=days, do=run_organizer, args=(), kwargs={})
+[2025-09-24 12:30:27] run_organizer called
+[2025-09-24 12:30:27] Launching organizer.py for folder: C:/Users/Bhlak/Downloads/Video/Art
+[2025-09-24 12:30:27] Launching organizer.py for folder: C:/Users/Bhlak/Downloads/Video

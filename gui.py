@@ -1,12 +1,14 @@
+import os
+import sys
+from PySide6.QtCore import Qt, QEvent, QTime
+from convenient import load_schedule, get_data_dir
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
     QWidget, QPushButton, QListWidget, QLabel, QFileDialog,
     QTabWidget, QTimeEdit, QStatusBar, QMessageBox, QAbstractItemView, 
     QRadioButton, QStackedWidget, QSpinBox, QComboBox, QHBoxLayout,
-    QFormLayout
+    QFormLayout, QGroupBox, QGridLayout
 )
-from PySide6.QtCore import Qt, QEvent, QTime
-import sys
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,13 +23,45 @@ class MainWindow(QMainWindow):
         # Home
         home_tab = QWidget()
         home_layout = QVBoxLayout()
+
         welcome_label = QLabel("Welcome to The Folder Organizer!")
         welcome_label.setAlignment(Qt.AlignCenter)
         welcome_label.setStyleSheet("font-size: 18px; font-weight: bold; margin: 5px; border: 2px dotted; border-radius: 30%")
         home_layout.addWidget(welcome_label)
 
+        schedule_group = QGroupBox("Current Schedule")
+        schedule_group.setStyleSheet("font-size: 14px; font-weight: bold;")
+
+        grid = QGridLayout()
+
+        grid.addWidget(QLabel("Type:"), 0, 0)
+        grid.addWidget(QLabel("Every:"), 1, 0)
+        grid.addWidget(QLabel("Weekday:"), 2, 0)
+        grid.addWidget(QLabel("Day:"), 3, 0)
+        grid.addWidget(QLabel("Time:"), 4, 0)
+
+        self.type_label = QLabel("-")
+        self.every_label = QLabel("-")
+        self.weekday_label = QLabel("-")
+        self.day_label = QLabel("-")
+        self.time_label = QLabel("-")
+
+        grid.addWidget(self.type_label, 0, 1)
+        grid.addWidget(self.every_label, 1, 1)
+        grid.addWidget(self.weekday_label, 2, 1)
+        grid.addWidget(self.day_label, 3, 1)
+        grid.addWidget(self.time_label, 4, 1)
+
+        # schedule_layout = QVBoxLayout()
+
         self.current_schedule_label = QLabel("No schedule set")
-        home_layout.addWidget(self.current_schedule_label)
+        self.current_schedule_label.setStyleSheet("font-size: 12px;")
+        grid.addWidget(self.current_schedule_label, 5,0,1,2)
+
+        schedule_group.setLayout(grid)
+        home_layout.addStretch()
+        home_layout.addWidget(schedule_group)
+        home_layout.addStretch()
         home_tab.setLayout(home_layout)
         self.tabs.addTab(home_tab, "Home")
 
@@ -203,14 +237,13 @@ class MainWindow(QMainWindow):
     
     def save_folders(self):
         folders = [self.folder_list.item(i).text() for i in range(self.folder_list.count())]
-        with open("folders.txt", "w") as f:
+        with open(os.path.join(get_data_dir(), "folders.txt"), "w") as f:
             f.write("\n".join(folders))
         self.status.showMessage("Folders Saved!", 3000)
 
     def load_folders(self):
-        import os
         if os.path.exists("folders.txt"):             
-            with open("folders.txt", "r") as f:
+            with open(os.path.join(get_data_dir(), "folders.txt"), "r") as f:
                 folders = f.read().splitlines()
                 self.folder_list.addItems(folders)
     
@@ -233,38 +266,52 @@ class MainWindow(QMainWindow):
             schedule_data["day"] = self.monthly_spin.value()
             schedule_data["time"] = self.monthly_time.time().toString("HH:mm")
         
-        with open("schedule.json", "w") as f:
+        with open(os.path.join(get_data_dir(), "schedule.json"), "w") as f:
             json.dump(schedule_data, f, indent=4)
         
         self.status.showMessage("Schedule Saved!", 3000)
         self.render_schedule()
-
-    def load_schedule(self):
-        import os
-        import json
-
-        if os.path.exists("schedule.json"):
-            with open("schedule.json", "r") as f:
-                schedule_data = json.load(f)
-                return schedule_data
+        self.setup_autorun()
     
     def render_schedule(self):
-        schedule_data = self.load_schedule()
-        schedule_type = schedule_data.get("type")
+        try:
+            schedule_data = load_schedule()
+        except Exception:
+            schedule_data = {}
+        schedule_type = schedule_data.get("type", "-")
+        every = str(schedule_data.get("every", "-"))
+        weekday = schedule_data.get("weekday", "-")
+        day = str(schedule_data.get("day", "-"))
+        time = schedule_data.get("time", "-")
 
+        self.type_label.setText(schedule_data.get("type", "-"))
+        self.every_label.setText(every)
+        self.weekday_label.setText(weekday)
+        self.day_label.setText(day)
+        self.time_label.setText(time)
         if schedule_type=="daily":
-            text = f"Schedule: Daily at {schedule_data.get('time','-')}"
+            if every == "1":
+                text = f"Every Day, at {time}"
+            else:
+                text = f"Every {every} Days, at {time}"
         elif schedule_type=="weekly":
-            text = (f"Schedule: Weekly, every {schedule_data.get('every','1')} week(s) "
-                        f"on {schedule_data.get('weekday','-')} at {schedule_data.get('time','-')}")
+            if every == "1":
+                text = f"Every Week, on {weekday}, at {time}"
+            else:
+                text = f"Every {every} weeks, on {weekday} at {time}"
         elif schedule_type=="monthly":
-             text = (f"Schedule: Monthly on day {schedule_data.get('day','-')} "
-                        f"at {schedule_data.get('time','-')}")
-        else:
-            text = "No valid schedule set"
+             text = f"Monthly, on day {day} at {time}"
         
         self.current_schedule_label.setText(text)
 
+    def setup_autorun(self):
+        import platform
+        from convenient import add_to_startup
+
+        system = platform.system()
+
+        if system == "Windows":
+            add_to_startup()
             
 app = QApplication(sys.argv)
 window = MainWindow()

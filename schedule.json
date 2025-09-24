@@ -1,6 +1,5 @@
 {
-    "type": "weekly",
+    "type": "daily",
     "every": 1,
-    "weekday": "Monday",
-    "time": "11:42"
+    "time": "12:30"
 }
