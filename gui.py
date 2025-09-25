@@ -1,7 +1,10 @@
 import os
 import sys
 from PySide6.QtCore import Qt, QEvent, QTime
-from convenient import load_schedule, get_data_dir
+from convenient import (load_schedule, get_user_data_dir, 
+                        load_folders, ensure_config_file,
+                        resource_path
+                        )
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
     QWidget, QPushButton, QListWidget, QLabel, QFileDialog,
@@ -51,8 +54,6 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.weekday_label, 2, 1)
         grid.addWidget(self.day_label, 3, 1)
         grid.addWidget(self.time_label, 4, 1)
-
-        # schedule_layout = QVBoxLayout()
 
         self.current_schedule_label = QLabel("No schedule set")
         self.current_schedule_label.setStyleSheet("font-size: 12px;")
@@ -183,8 +184,15 @@ class MainWindow(QMainWindow):
         self.delete_button.clicked.connect(self.remove_folders)
         self.save_button.clicked.connect(self.save_folders)
 
-        self.load_folders()
+        self.schedule_file = ensure_config_file("schedule.json", resource_path("defaults/schedule.json"))
+        self.folder_file = ensure_config_file("folders.txt", resource_path("defaults/folders.txt"))
+        
+        # self.folder_file = os.path.join(get_user_data_dir(), "folders.txt")
+        # self.schedule_file = os.path.join(get_user_data_dir(), "schedule.json")
+        
+        self.folder_list.addItems(load_folders() or [])
         self.render_schedule()
+
     
     def eventFilter(self, source, event):
         if source is self.folder_list and event.type() == QEvent.KeyPress:
@@ -229,7 +237,7 @@ class MainWindow(QMainWindow):
                 if reply == QMessageBox.Yes:
                     for i in folders:
                         self.folder_list.takeItem(self.folder_list.row(i))
-                        self.save_folders()
+                    self.save_folders()
                     self.status.showMessage(f"{len(folders)} Folders Removed from Watchlist!")
 
         else:
@@ -237,15 +245,15 @@ class MainWindow(QMainWindow):
     
     def save_folders(self):
         folders = [self.folder_list.item(i).text() for i in range(self.folder_list.count())]
-        with open(os.path.join(get_data_dir(), "folders.txt"), "w") as f:
+        with open(self.folder_file, "w") as f:
             f.write("\n".join(folders))
         self.status.showMessage("Folders Saved!", 3000)
 
-    def load_folders(self):
-        if os.path.exists("folders.txt"):             
-            with open(os.path.join(get_data_dir(), "folders.txt"), "r") as f:
-                folders = f.read().splitlines()
-                self.folder_list.addItems(folders)
+    # def load_folders(self):
+    #     if os.path.exists(self.folder_file):             
+    #         with open(self.folder_file, "r") as f:
+    #             folders = f.read().splitlines()
+    #             self.folder_list.addItems(folders)
     
     def save_schedule(self):
         import json
@@ -265,8 +273,7 @@ class MainWindow(QMainWindow):
             schedule_data["type"] = "monthly"
             schedule_data["day"] = self.monthly_spin.value()
             schedule_data["time"] = self.monthly_time.time().toString("HH:mm")
-        
-        with open(os.path.join(get_data_dir(), "schedule.json"), "w") as f:
+        with open(self.schedule_file, "w") as f:
             json.dump(schedule_data, f, indent=4)
         
         self.status.showMessage("Schedule Saved!", 3000)
@@ -278,6 +285,8 @@ class MainWindow(QMainWindow):
             schedule_data = load_schedule()
         except Exception:
             schedule_data = {}
+        if not schedule_data:
+            schedule_data = {"type": "-", "every": "-", "time": "-", "weekday": "-"}
         schedule_type = schedule_data.get("type", "-")
         every = str(schedule_data.get("every", "-"))
         weekday = schedule_data.get("weekday", "-")
@@ -301,17 +310,46 @@ class MainWindow(QMainWindow):
                 text = f"Every {every} weeks, on {weekday} at {time}"
         elif schedule_type=="monthly":
              text = f"Monthly, on day {day} at {time}"
+        else:
+            text = "No schedule set"
         
         self.current_schedule_label.setText(text)
 
     def setup_autorun(self):
-        import platform
-        from convenient import add_to_startup
+        import platform, subprocess
+        from convenient import add_to_startup, get_user_data_dir
+        from convenient import log as debug_log
 
         system = platform.system()
 
         if system == "Windows":
             add_to_startup()
+
+            if getattr(sys, 'frozen', False):
+                base_dir = os.path.dirname(sys.executable)
+                executor_exe = os.path.join(base_dir, "Executor.exe")
+                cmd = [executor_exe]
+            else:
+                python_dir = os.path.dirname(sys.executable)
+                pythonw = os.path.join(python_dir, "pythonw.exe")
+                base_dir = os.path.dirname(__file__)
+                executor_py = os.path.join(base_dir, "executor.py")
+                cmd = [pythonw, executor_py]
+
+            if os.path.exists(cmd[0]):
+                try:
+                    subprocess.Popen(
+                        cmd,
+                        stdout = subprocess.DEVNULL,
+                        stderr = subprocess.DEVNULL,
+                        creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+                    )
+                except Exception as e:
+                    debug_log(f"Failed to launch Executor immediately: {e}")
+            else:
+                debug_log(f"Executor not found at: {cmd[0]}")
+        else:
+            debug_log("Autorun is only supported on Windows for now!")
             
 app = QApplication(sys.argv)
 window = MainWindow()

@@ -1,7 +1,6 @@
 mapping = {
         "pdf": "Docs",
         "txt": "Docs",
-        "pptm": "Docs",
         "docx": "Docs",
         "xlsx": "Docs",
         "pptx": "Docs",
@@ -12,7 +11,6 @@ mapping = {
 
         "png": "Images",
         "jpg": "Images",
-        "JPG": "Images",
         "jpeg": "Images",
 
         "html": "Webpages",
@@ -41,37 +39,25 @@ mapping = {
     }
 
 def organizer(path):
-    print("here")
     from os import listdir
     from os.path import isfile, join
     
     files = [f for f in listdir(path) if isfile(join(path, f))]
-    print("Here at organizer")
     for i in files:
-        filetype = i.split('.')[-1]
-
-        # with open(f'{path}/temp.txt', 'a+') as f:
-        #     f.seek(0)
-        #     types = f.readlines()
-        #     if f'{filetype}\n' in types:
-        #         continue
-        #     f.writelines(f'{filetype}\n')
-
+        filetype = i.split('.')[-1].lower()
         sorter(path=path, file=i, type=filetype)
-
 
 def get_folder(type):
     if type not in mapping:
         return None
-    return mapping[type] 
-    
-
+    return mapping[type]
 
 def sorter(path, file, type):
     import os
     import shutil
+    from convenient import get_user_data_dir
 
-    print("Here at sorter")
+    report_file = os.path.join(get_user_data_dir(), "organizer_log.txt")
     dest = get_folder(type)
     
     if dest:
@@ -81,22 +67,14 @@ def sorter(path, file, type):
         try:
             shutil.move(os.path.join(path, file), os.path.join(newpath, file))
         except Exception as e:
-            with open(f'{path}/report.txt', 'a+') as f:
-                f.write(f"Error Encountered: {e} \n")
-        
+            with open(report_file, 'a+', encoding="utf-8") as f:
+                f.write(f"[{path}] Error: {e}\n")
         return True
-
-        
-
     return None
-
-
 
 if __name__ == '__main__':
     import sys
     
     if len(sys.argv) > 1:
-    # print("1")
         folder = sys.argv[1]
-        print(folder)
         organizer(folder)

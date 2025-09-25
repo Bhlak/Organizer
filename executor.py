@@ -2,18 +2,23 @@ import os
 import sys
 import time
 import schedule
-from convenient import load_schedule, load_folders, get_data_dir
+from convenient import (
+    load_schedule, load_folders, 
+    ensure_config_file, get_user_data_dir, resource_path
+                        )
 
 
 def log(msg):
-    base_dir = get_data_dir()
-    log_file = os.path.join(base_dir, "executor_log.txt")
+    base_dir = get_user_data_dir()
+    # log_file = os.path.join(base_dir, "executor_log.txt")
+    log_file = ensure_config_file("executor_log.txt", resource_path("defaults/executor_log.txt"))
 
     with open(log_file, "a", encoding="utf-8") as f:
-        f.write(f'[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n')
+        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
 
 def run_organizer():
-    import subprocess
+    import subprocess, platform, sys, os
+    from organizer import organizer
 
     log("run_organizer called")
     folders = load_folders()
@@ -21,22 +26,29 @@ def run_organizer():
         log("No folders loaded, exiting...")
         return
     
-    if getattr(sys, "frozen", False):
-        organizer_path = os.path.join(os.path.dirname(sys.executable), "organizer.exe")
-        cmd = [organizer_path, f]
-    else:
-        pythonw = os.path.join(sys.prefix, "Scripts", "pythonw.exe")
-        organizer_path = os.path.join(os.path.dirname(__file__), "organizer.py")
-        cmd = [pythonw, organizer_path, f]
     for f in folders:
         log(f"Launching organizer.py for folder: {f}")
         try:
-            subprocess.Popen(
-                cmd, 
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
-                             )
+            organizer(f)
+            # pythonw = os.path.join(sys.prefix, "Scripts", "pythonw.exe")
+            # python_dir = os.path.dirname(sys.executable)
+            # pythonw = os.path.join(python_dir, "pythonw.exe")
+            # organizer_path = os.path.join(os.path.dirname(__file__), "organizer.py")
+            # # organizer_path = ensure_config_file("organizer.py")
+            # cmd = [pythonw, organizer_path, f]
+            # if platform.system() == "Windows":
+            #     subprocess.Popen(
+            #         cmd,
+            #         stdout=subprocess.DEVNULL,
+            #         stderr=subprocess.DEVNULL,
+            #         creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+            #                         )
+            # else:
+            #     subprocess.Popen(
+            #         cmd,
+            #         stdout=subprocess.DEVNULL,
+            #         stderr=subprocess.DEVNULL
+            #     )
         except Exception as e:
             log(f"Failed to launch organizer.py for {f}: {e}")
 
@@ -82,7 +94,7 @@ def setup_schedule():
 if __name__ == "__main__":
 
     log("executor.py started")
-    sched_file = os.path.join(get_data_dir(), "schedule.json")
+    sched_file = ensure_config_file("schedule.json", resource_path("defaults/schedule.json"))
     last_mod_time = None
     while True:
         try:
@@ -90,9 +102,10 @@ if __name__ == "__main__":
                 mod_time = os.path.getmtime(sched_file)
                 if last_mod_time is None or mod_time != last_mod_time:
                     setup_schedule()
+                    if mod_time != last_mod_time:
+                        log("Schedule Changed")
                     last_mod_time = mod_time
             schedule.run_pending()
         except Exception as e:
             log(f"ERROR: {e}")
-        
-        time.sleep(60)
+        time.sleep(5)
