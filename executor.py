@@ -10,7 +10,6 @@ from convenient import (
 
 def log(msg):
     base_dir = get_user_data_dir()
-    # log_file = os.path.join(base_dir, "executor_log.txt")
     log_file = ensure_config_file("executor_log.txt", resource_path("defaults/executor_log.txt"))
 
     with open(log_file, "a", encoding="utf-8") as f:
@@ -30,25 +29,6 @@ def run_organizer():
         log(f"Launching organizer.py for folder: {f}")
         try:
             organizer(f)
-            # pythonw = os.path.join(sys.prefix, "Scripts", "pythonw.exe")
-            # python_dir = os.path.dirname(sys.executable)
-            # pythonw = os.path.join(python_dir, "pythonw.exe")
-            # organizer_path = os.path.join(os.path.dirname(__file__), "organizer.py")
-            # # organizer_path = ensure_config_file("organizer.py")
-            # cmd = [pythonw, organizer_path, f]
-            # if platform.system() == "Windows":
-            #     subprocess.Popen(
-            #         cmd,
-            #         stdout=subprocess.DEVNULL,
-            #         stderr=subprocess.DEVNULL,
-            #         creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
-            #                         )
-            # else:
-            #     subprocess.Popen(
-            #         cmd,
-            #         stdout=subprocess.DEVNULL,
-            #         stderr=subprocess.DEVNULL
-            #     )
         except Exception as e:
             log(f"Failed to launch organizer.py for {f}: {e}")
 
