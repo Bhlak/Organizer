@@ -51,13 +51,11 @@ def add_to_startup():
     shortcut = shell.CreateShortcut(shortcut_path)
 
     if getattr(sys, 'frozen', False):
-        args = ""
         # target = sys.executable
         base_dir = os.path.dirname(sys.executable)
         exe_path = os.path.join(base_dir, "Executor.exe")
    
         shortcut.TargetPath = exe_path
-        shortcut.Arguments = args
         shortcut.WorkingDirectory = base_dir
         shortcut.IconLocation = exe_path
     else:
@@ -68,6 +66,8 @@ def add_to_startup():
         if not os.path.exists(target):
             target = sys.executable
 
+        python_dir = os.path.dirname(sys.executable)
+        pythonw = os.path.join(python_dir, "pythonw.exe")
         shortcut.TargetPath = pythonw
         shortcut.Arguments = f'"{py_path}"'
         shortcut.WorkingDirectory = base_dir
@@ -132,8 +132,9 @@ def log(msg):
         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}\n")
 
 def stop_autorun():
-    import os, schedule, json, shutil, platform, subprocess
-    from convenient import get_user_data_dir, ensure_config_file
+    import os, json, platform, subprocess
+    from executor import log as executor_log
+    from convenient import ensure_config_file
 
     sched_file = ensure_config_file("schedule.json")
     with open(sched_file, "w") as f:
@@ -149,6 +150,7 @@ def stop_autorun():
                 startupinfo=si,
                 creationflags=subprocess.CREATE_NO_WINDOW
                 )
+            executor_log("Autorun Stopped, Executor Killed")
         except Exception:
             pass
     
@@ -158,3 +160,10 @@ def stop_autorun():
         os.remove(shortcut)
     
     return True
+
+def load_mappings():
+    import json
+
+    file = ensure_config_file("mappigns.json")
+    with open(file, "r", encoding="utf-8") as f:
+        return json.load(f)

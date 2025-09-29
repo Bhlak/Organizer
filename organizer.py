@@ -48,6 +48,9 @@ def organizer(path):
         sorter(path=path, file=i, type=filetype)
 
 def get_folder(type):
+    from convenient import load_mappings
+
+    mapping = load_mappings()
     if type not in mapping:
         return None
     return mapping[type]
