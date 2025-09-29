@@ -3,7 +3,7 @@ import sys
 from PySide6.QtCore import Qt, QEvent, QTime
 from convenient import (load_schedule, get_user_data_dir, 
                         load_folders, ensure_config_file,
-                        resource_path
+                        resource_path, stop_autorun
                         )
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
@@ -34,6 +34,11 @@ class MainWindow(QMainWindow):
 
         schedule_group = QGroupBox("Current Schedule")
         schedule_group.setStyleSheet("font-size: 14px; font-weight: bold;")
+
+        self.stop_button = QPushButton("Stop Autorun")
+        self.stop_button.setStyleSheet("background-color: #d9534f; color: white; font-weight: bold;")
+        self.stop_button.clicked.connect(self.stop_executor)
+        home_layout.addWidget(self.stop_button)
 
         grid = QGridLayout()
 
@@ -171,21 +176,31 @@ class MainWindow(QMainWindow):
         self.delete_button = QPushButton("Delete Folder")
         folders_layout.addWidget(self.delete_button)
 
-        self.save_button = QPushButton("Save Folders")
-        folders_layout.addWidget(self.save_button)
+        # self.save_button = QPushButton("Save Folders")
+        # folders_layout.addWidget(self.save_button)
 
         folders_tab.setLayout(folders_layout)
         self.tabs.addTab(folders_tab, "Folders")
+
+        # Mapping
+        mapping_tab = QWidget()
+        mapping_layout = QVBoxLayout()
+
+        self.mapping_label = QLabel("Mapping")
+        mapping_layout.addWidget(self.mapping_label)
+
+        mapping_tab.setLayout(mapping_layout)
+        self.tabs.addTab(mapping_tab, "Mapping")
 
         self.status = QStatusBar()
         self.setStatusBar(self.status)
 
         self.add_button.clicked.connect(self.add_folder)
         self.delete_button.clicked.connect(self.remove_folders)
-        self.save_button.clicked.connect(self.save_folders)
+        # self.save_button.clicked.connect(self.save_folders)
 
-        self.schedule_file = ensure_config_file("schedule.json", resource_path("defaults/schedule.json"))
-        self.folder_file = ensure_config_file("folders.txt", resource_path("defaults/folders.txt"))
+        self.schedule_file = ensure_config_file("schedule.json")
+        self.folder_file = ensure_config_file("folders.txt")
         
         # self.folder_file = os.path.join(get_user_data_dir(), "folders.txt")
         # self.schedule_file = os.path.join(get_user_data_dir(), "schedule.json")
@@ -194,6 +209,13 @@ class MainWindow(QMainWindow):
         self.render_schedule()
 
     
+    def stop_executor(self):
+        try:
+            stop_autorun()
+            self.status.showMessage("Autorun stopped and Executor Terminated.", 3000)
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to stop autorun: {e}")
+
     def eventFilter(self, source, event):
         if source is self.folder_list and event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Delete:
@@ -205,6 +227,7 @@ class MainWindow(QMainWindow):
             folder = QFileDialog.getExistingDirectory(self, "Select Folder")
             if folder and not any(self.folder_list.item(i).text() == folder for i in range(self.folder_list.count())):
                  self.folder_list.addItem(folder)
+            self.save_folders()
 
     def remove_folders(self):
         folders = self.folder_list.selectedItems()
@@ -249,12 +272,6 @@ class MainWindow(QMainWindow):
             f.write("\n".join(folders))
         self.status.showMessage("Folders Saved!", 3000)
 
-    # def load_folders(self):
-    #     if os.path.exists(self.folder_file):             
-    #         with open(self.folder_file, "r") as f:
-    #             folders = f.read().splitlines()
-    #             self.folder_list.addItems(folders)
-    
     def save_schedule(self):
         import json
         
@@ -317,7 +334,7 @@ class MainWindow(QMainWindow):
 
     def setup_autorun(self):
         import platform, subprocess
-        from convenient import add_to_startup, get_user_data_dir
+        from convenient import add_to_startup
         from convenient import log as debug_log
 
         system = platform.system()
