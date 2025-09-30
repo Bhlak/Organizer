@@ -3,14 +3,14 @@ import sys
 from PySide6.QtCore import Qt, QEvent, QTime
 from convenient import (load_schedule, get_user_data_dir, 
                         load_folders, ensure_config_file,
-                        resource_path, stop_autorun
+                        load_mappings, stop_autorun
                         )
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout,
     QWidget, QPushButton, QListWidget, QLabel, QFileDialog,
     QTabWidget, QTimeEdit, QStatusBar, QMessageBox, QAbstractItemView, 
     QRadioButton, QStackedWidget, QSpinBox, QComboBox, QHBoxLayout,
-    QFormLayout, QGroupBox, QGridLayout
+    QFormLayout, QGroupBox, QGridLayout, QInputDialog
 )
 
 class MainWindow(QMainWindow):
@@ -186,8 +186,22 @@ class MainWindow(QMainWindow):
         mapping_tab = QWidget()
         mapping_layout = QVBoxLayout()
 
-        self.mapping_label = QLabel("Mapping")
-        mapping_layout.addWidget(self.mapping_label)
+        self.mapping_file = ensure_config_file("mappings.json")
+        self.mappings = load_mappings()
+        # self.render_mappings()
+
+        self.mapping_list = QListWidget()
+        self.mapping_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        mapping_layout.addWidget(self.mapping_list)
+
+        self.add_mapping_button = QPushButton("Add Mapping")
+        mapping_layout.addWidget(self.add_mapping_button)
+
+        self.delete_mapping_button = QPushButton("Delete Mapping")
+        mapping_layout.addWidget(self.delete_mapping_button)
+
+        self.save_mapping_button = QPushButton("Save Mappings")
+        mapping_layout.addWidget(self.save_mapping_button)
 
         mapping_tab.setLayout(mapping_layout)
         self.tabs.addTab(mapping_tab, "Mapping")
@@ -367,7 +381,15 @@ class MainWindow(QMainWindow):
                 debug_log(f"Executor not found at: {cmd[0]}")
         else:
             debug_log("Autorun is only supported on Windows for now!")
-            
+
+    def add_mapping(self):
+        folder, ok = QInputDialog.getText)()
+
+    def render_mappings(self):
+        self.mapping_list.clear()
+        for folder, extensions in self.mappings.items():
+            self.mapping_list.addItem(f"{folder}: {', '.join(extensions)}")
+
 app = QApplication(sys.argv)
 window = MainWindow()
 window.show()

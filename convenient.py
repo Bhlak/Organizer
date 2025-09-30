@@ -162,8 +162,16 @@ def stop_autorun():
     return True
 
 def load_mappings():
+    from convenient import ensure_config_file
     import json
 
-    file = ensure_config_file("mappigns.json")
+    file = ensure_config_file("mappings.json")
     with open(file, "r", encoding="utf-8") as f:
-        return json.load(f)
+        folder_mappings = json.load(f)
+    
+    extension_mappings = {}
+    for folder, extensions in folder_mappings.items():
+        for extension in extensions:
+            extension_mappings[extension.lower()] = folder
+    
+    return extension_mappings
