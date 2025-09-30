@@ -215,12 +215,17 @@ class MainWindow(QMainWindow):
 
         self.schedule_file = ensure_config_file("schedule.json")
         self.folder_file = ensure_config_file("folders.txt")
+
+        self.add_mapping_button.clicked.connect(self.add_mapping)
+        self.delete_mapping_button.clicked.connect(self.delete_mapping)
+        self.save_mapping_button.clicked.connect(self.save_mappings)
         
         # self.folder_file = os.path.join(get_user_data_dir(), "folders.txt")
         # self.schedule_file = os.path.join(get_user_data_dir(), "schedule.json")
         
         self.folder_list.addItems(load_folders() or [])
         self.render_schedule()
+        self.render_mappings()
 
     
     def stop_executor(self):
@@ -383,7 +388,46 @@ class MainWindow(QMainWindow):
             debug_log("Autorun is only supported on Windows for now!")
 
     def add_mapping(self):
-        folder, ok = QInputDialog.getText)()
+        folder, ok = QInputDialog.getText(self, "New Mapping", "Enter category/folder name:")
+        if not ok or not folder:
+            return
+        
+
+        extension, ok = QInputDialog.getText(self, "New Extension", "Enter extension (e.g. pdf):")
+        if not ok or not extension:
+            return
+        
+        folder = folder.strip()
+        extension = extension.strip().lower()
+
+        self.mappings.setdefault(folder, [])
+        if extension not in self.mappings[folder]:
+            self.mappings[folder].append(extension)
+
+        self.render_mappings()
+        self.save_mappings()
+    
+    def delete_mapping(self):
+        selected = self.mapping_list.selectedItems()
+        if not selected:
+            return
+        
+        for item in selected:
+            text = item.text()
+            folder, _, extensions = text.partition(":")
+            folder = folder.strip()
+            if folder in self.mappings:
+                del self.mappings[folder]
+        
+        self.render_mapppings()
+        self.save_mappings()
+    
+    def save_mappings(self):
+        import json
+
+        with open(self.mapping_file, "w", encoding="utf-8") as f:
+            json.dump(self.mappings, f, indent=4)
+        self.status.showMessage("Mappings Saved!", 3000)
 
     def render_mappings(self):
         self.mapping_list.clear()
