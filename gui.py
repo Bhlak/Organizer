@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QWidget, QPushButton, QListWidget, QLabel, QFileDialog,
     QTabWidget, QTimeEdit, QStatusBar, QMessageBox, QAbstractItemView, 
     QRadioButton, QStackedWidget, QSpinBox, QComboBox, QHBoxLayout,
-    QFormLayout, QGroupBox, QGridLayout, QInputDialog
+    QFormLayout, QGroupBox, QGridLayout, QInputDialog, QCheckBox, QScrollArea
 )
 
 class MainWindow(QMainWindow):
@@ -184,30 +184,42 @@ class MainWindow(QMainWindow):
 
         # Mapping
         mapping_tab = QWidget()
-        mapping_layout = QVBoxLayout()
 
         self.mapping_file = ensure_config_file("mappings.json")
         self.mappings = load_mappings()
+        self.arranged_mappings = {}
         # self.render_mappings()
 
-        self.mapping_list = QListWidget()
-        self.mapping_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        mapping_layout.addWidget(self.mapping_list)
+        self.folders_window = QWidget()
+        self.mapping_folder_layout = QVBoxLayout(self.folders_window)
+        self.folders_container = QScrollArea()
+        self.folders_container.setWidgetResizable(True)
+
+        # self.mapping_list = QListWidget()
+        # self.mapping_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        # mapping_layout.addWidget(self.mapping_list)
+        self.mapping_layout = QVBoxLayout()
+        self.folders_container.setWidget(self.folders_window)
+        self.mapping_layout.addWidget(self.folders_container)
 
         self.add_mapping_button = QPushButton("Add Mapping")
-        mapping_layout.addWidget(self.add_mapping_button)
+        self.mapping_layout.addWidget(self.add_mapping_button)
 
+        
         self.delete_mapping_button = QPushButton("Delete Mapping")
-        mapping_layout.addWidget(self.delete_mapping_button)
+        self.mapping_layout.addWidget(self.delete_mapping_button)
 
         self.save_mapping_button = QPushButton("Save Mappings")
-        mapping_layout.addWidget(self.save_mapping_button)
+        self.mapping_layout.addWidget(self.save_mapping_button)
 
-        mapping_tab.setLayout(mapping_layout)
+        self.render_mappings()
+
+        mapping_tab.setLayout(self.mapping_layout)
         self.tabs.addTab(mapping_tab, "Mapping")
 
         self.status = QStatusBar()
         self.setStatusBar(self.status)
+
 
         self.add_button.clicked.connect(self.add_folder)
         self.delete_button.clicked.connect(self.remove_folders)
@@ -215,6 +227,7 @@ class MainWindow(QMainWindow):
 
         self.schedule_file = ensure_config_file("schedule.json")
         self.folder_file = ensure_config_file("folders.txt")
+
 
         self.add_mapping_button.clicked.connect(self.add_mapping)
         self.delete_mapping_button.clicked.connect(self.delete_mapping)
@@ -225,7 +238,6 @@ class MainWindow(QMainWindow):
         
         self.folder_list.addItems(load_folders() or [])
         self.render_schedule()
-        self.render_mappings()
 
     
     def stop_executor(self):
@@ -388,24 +400,36 @@ class MainWindow(QMainWindow):
             debug_log("Autorun is only supported on Windows for now!")
 
     def add_mapping(self):
+        # print(self.mappings)
         folder, ok = QInputDialog.getText(self, "New Mapping", "Enter category/folder name:")
-        if not ok or not folder:
+        if not ok:
             return
-        
+        if not folder:
+            QMessageBox.warning(self, "Error", "No folder entered")
+            return
 
         extension, ok = QInputDialog.getText(self, "New Extension", "Enter extension (e.g. pdf):")
-        if not ok or not extension:
+        if not ok:
+            return
+        if not extension:
+            QMessageBox.warning(self, "Error", "No Extension entered")
             return
         
         folder = folder.strip()
         extension = extension.strip().lower()
 
-        self.mappings.setdefault(folder, [])
-        if extension not in self.mappings[folder]:
-            self.mappings[folder].append(extension)
+        mappings  = self.arranged_mappings
+        # mappings.setdefault(folder, [])
+        if extension not in mappings[folder]:
+            # print("EXTENSIONNNNNN")
+            # print(mappings)
+            # print()
+            mappings[folder].append(extension)
 
-        self.render_mappings()
+
+        self.arranged_mappings = mappings
         self.save_mappings()
+        # self.render_mappings()
     
     def delete_mapping(self):
         selected = self.mapping_list.selectedItems()
@@ -419,20 +443,45 @@ class MainWindow(QMainWindow):
             if folder in self.mappings:
                 del self.mappings[folder]
         
-        self.render_mapppings()
+        # self.render_mapppings()
         self.save_mappings()
     
     def save_mappings(self):
         import json
 
+        # print("Self.mappings")
+        # print(self.mappings)
         with open(self.mapping_file, "w", encoding="utf-8") as f:
-            json.dump(self.mappings, f, indent=4)
+            json.dump(self.arranged_mappings, f, indent=4)
         self.status.showMessage("Mappings Saved!", 3000)
+        self.render_mappings()
 
     def render_mappings(self):
-        self.mapping_list.clear()
-        for folder, extensions in self.mappings.items():
-            self.mapping_list.addItem(f"{folder}: {', '.join(extensions)}")
+        for i in reversed(range(self.mapping_layout.count())):
+            widget = self.mapping_layout.itemAt(i).widget()
+            if widget and widget not in [self.folders_container, self.add_mapping_button, self.delete_mapping_button, self.save_mapping_button]:
+                widget.setParent(None)
+        
+        mappings = {}
+
+
+        for extension, folder in self.mappings.items():
+            if folder not in mappings:
+                mappings[folder] = list()
+            mappings[folder].append(extension)
+            
+
+        for folder in mappings:
+            group_box = QGroupBox(folder)
+            grid = QGridLayout()   
+            for idx, extension in enumerate(mappings[folder]):
+                checkbox = QCheckBox(extension)
+                grid.addWidget(checkbox, idx // 4, idx % 4)
+            group_box.setLayout(grid)
+
+            self.mapping_folder_layout.addWidget(group_box)
+        # print(mappings)
+        self.arranged_mappings = mappings
 
 app = QApplication(sys.argv)
 window = MainWindow()

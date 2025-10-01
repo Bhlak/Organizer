@@ -51,6 +51,7 @@ def get_folder(type):
     from convenient import load_mappings
 
     mapping = load_mappings()
+    print(mapping)
     if type not in mapping:
         return None
     return mapping[type]
@@ -78,6 +79,7 @@ def sorter(path, file, type):
 if __name__ == '__main__':
     import sys
     
-    if len(sys.argv) > 1:
-        folder = sys.argv[1]
-        organizer(folder)
+    organizer("C:\\Users\\Bhlak\\Downloads\\Art")
+    # if len(sys.argv) > 1:
+    #     folder = sys.argv[1]
+    #     organizer(folder)

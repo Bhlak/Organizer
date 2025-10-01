@@ -174,4 +174,10 @@ def load_mappings():
         for extension in extensions:
             extension_mappings[extension.lower()] = folder
     
+    # print("----------------------------------------------")
+    # print("Convenient print")
+    # print("----------------------------------------------")
+
+    # print(extension_mappings)
+    # print("----------------------------------------------")
     return extension_mappings
