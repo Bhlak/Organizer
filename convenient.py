@@ -169,10 +169,10 @@ def load_mappings():
     with open(file, "r", encoding="utf-8") as f:
         folder_mappings = json.load(f)
     
-    extension_mappings = {}
-    for folder, extensions in folder_mappings.items():
-        for extension in extensions:
-            extension_mappings[extension.lower()] = folder
+    # extension_mappings = {}
+    # for folder, extensions in folder_mappings.items():
+    #     for extension in extensions:
+    #         extension_mappings[extension.lower()] = folder
     
     # print("----------------------------------------------")
     # print("Convenient print")
@@ -180,4 +180,4 @@ def load_mappings():
 
     # print(extension_mappings)
     # print("----------------------------------------------")
-    return extension_mappings
+    return folder_mappings
