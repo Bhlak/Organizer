@@ -124,8 +124,6 @@ def log(msg):
     import os
     import time
 
-    # base_dir = get_user_data_dir()
-    # log_file = os.path.join(base_dir, "debug_log.txt")
     log_file = ensure_config_file("debug_log.txt")
 
     with open(log_file, "a", encoding="utf-8") as f:
@@ -174,10 +172,4 @@ def load_mappings():
     #     for extension in extensions:
     #         extension_mappings[extension.lower()] = folder
     
-    # print("----------------------------------------------")
-    # print("Convenient print")
-    # print("----------------------------------------------")
-
-    # print(extension_mappings)
-    # print("----------------------------------------------")
     return folder_mappings
