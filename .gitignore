@@ -6,6 +6,8 @@ defaults/
 *.spec
 *.bat
 
+builds/
+
 __pycache__/
 *.pyc
 
