@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Folder Monitor")
+        self.setWindowTitle("FolderFlow")
         self.setGeometry(200, 200, 500, 400)
 
         self.tabs = QTabWidget()
